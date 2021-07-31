@@ -1,0 +1,115 @@
+services:
+  web:
+    image: httpd
+    ports:
+      - "127.0.0.1:8080:80"
+    depends_on:
+      - fluentd
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: localhost:24224
+        tag: httpd.access
+
+  fluentd:
+    build: ./fluentd
+    volumes:
+      - ./fluentd/conf:/fluentd/etc
+      # Mount host systemd journal (read-only)
+      - /var/log/journal:/var/log/journal:ro
+      - /run/log/journal:/run/log/journal:ro
+      # Persistent cursor storage so fluentd remembers journal position
+      - fluentd-log:/fluentd/log
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    environment:
+      # Fluentd needs ES credentials to write data
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+    ports:
+      - "127.0.0.1:24224:24224"
+      - "127.0.0.1:24224:24224/udp"
+      # HTTP input for Sentry webhooks
+      - "127.0.0.1:9880:9880"
+      # Syslog input for remote IoT devices (exposed to network, not just localhost)
+      - "5140:5140"
+      - "5140:5140/udp"
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.17.1
+    container_name: elasticsearch
+    hostname: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=true
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -sf -u elastic:${ELASTIC_PASSWORD} http://localhost:9200/_cluster/health || exit 1",
+        ]
+      interval: 10s
+      retries: 10
+      timeout: 5s
+    ports:
+      - 127.0.0.1:9200:9200
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+
+  # One-shot container that sets the kibana_system user password in ES.
+  # This must run after ES is healthy but before Kibana can connect.
+  es-setup:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.17.1
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    environment:
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+      - KIBANA_PASSWORD=${KIBANA_PASSWORD}
+    command: >
+      bash -c '
+        echo "==> Setting kibana_system password..."
+        until curl -sf -u "elastic:${ELASTIC_PASSWORD}" http://elasticsearch:9200 >/dev/null 2>&1; do
+          sleep 2
+        done
+        curl -sf -X POST -u "elastic:${ELASTIC_PASSWORD}" \
+          -H "Content-Type: application/json" \
+          http://elasticsearch:9200/_security/user/kibana_system/_password \
+          -d "{\"password\":\"${KIBANA_PASSWORD}\"}"
+        echo ""
+        echo "==> kibana_system password set."
+      '
+    restart: "no"
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.17.1
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+      es-setup:
+        condition: service_completed_successfully
+    ports:
+      - "127.0.0.1:5601:5601"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - ELASTICSEARCH_USERNAME=kibana_system
+      - ELASTICSEARCH_PASSWORD=${KIBANA_PASSWORD}
+
+  # One-shot container that waits for Kibana to be ready, then imports
+  # pre-built saved objects (index patterns, searches, visualizations, dashboard).
+  kibana-setup:
+    image: curlimages/curl:8.5.0
+    depends_on:
+      - kibana
+    environment:
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+    volumes:
+      - ./kibana:/kibana:ro
+    entrypoint: ["/bin/sh", "/kibana/setup.sh"]
+    restart: "no"
+
+volumes:
+  es-data:
+  fluentd-log:
