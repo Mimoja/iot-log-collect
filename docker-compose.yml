@@ -3,16 +3,7 @@ services:
   # Receives journal uploads from edge devices via HTTP POST /upload
   # nginx reverse-proxies /journal-upload/upload -> this container's :19532/upload
   journal-remote:
-    image: debian:bookworm-slim
-    command: >
-      bash -c '
-        apt-get update && apt-get install -y --no-install-recommends systemd-journal-remote &&
-        mkdir -p /var/log/journal/remote &&
-        /usr/lib/systemd/systemd-journal-remote
-          --listen-http=0.0.0.0:19532
-          --output=/var/log/journal/remote/
-          --split-mode=host
-      '
+    build: ./journal-remote
     volumes:
       - journal-remote-data:/var/log/journal/remote
     ports:
