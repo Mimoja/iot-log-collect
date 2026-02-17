@@ -1,5 +1,24 @@
 services:
 
+  # Receives journal uploads from edge devices via HTTP POST /upload
+  # nginx reverse-proxies /journal-upload/upload -> this container's :19532/upload
+  journal-remote:
+    image: debian:bookworm-slim
+    command: >
+      bash -c '
+        apt-get update && apt-get install -y --no-install-recommends systemd-journal-remote &&
+        mkdir -p /var/log/journal/remote &&
+        /usr/lib/systemd/systemd-journal-remote
+          --listen-http=0.0.0.0:19532
+          --output=/var/log/journal/remote/
+          --split-mode=host
+      '
+    volumes:
+      - journal-remote-data:/var/log/journal/remote
+    ports:
+      - "127.0.0.1:19532:19532"
+    restart: unless-stopped
+
   fluentd:
     build: ./fluentd
     volumes:
@@ -7,11 +26,15 @@ services:
       # Mount host systemd journal (read-only)
       - /var/log/journal:/var/log/journal:ro
       - /run/log/journal:/run/log/journal:ro
+      # Mount remote journal files written by journal-remote
+      - journal-remote-data:/var/log/journal-remote:ro
       # Persistent cursor storage so fluentd remembers journal position
       - fluentd-log:/fluentd/log
     depends_on:
       elasticsearch:
         condition: service_healthy
+      journal-remote:
+        condition: service_started
     environment:
       # Fluentd needs ES credentials to write data
       - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
@@ -20,9 +43,6 @@ services:
       - "127.0.0.1:24224:24224/udp"
       # HTTP input for Sentry webhooks
       - "127.0.0.1:9880:9880"
-      # Syslog input for remote IoT devices (exposed to network, not just localhost)
-      - "5140:5140"
-      - "5140:5140/udp"
 
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.17.1
@@ -102,3 +122,4 @@ services:
 volumes:
   es-data:
   fluentd-log:
+  journal-remote-data:
