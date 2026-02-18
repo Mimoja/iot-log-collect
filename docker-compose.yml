@@ -1,6 +1,7 @@
 services:
   fluentd:
     build: ./fluentd
+    command: ["fluentd", "-c", "/fluentd/etc/fluent.conf", "-q"]
     volumes:
       - ./fluentd/conf:/fluentd/etc
       # TLS certificates — mount entire letsencrypt tree so symlinks resolve
@@ -85,17 +86,6 @@ services:
       - ELASTICSEARCH_USERNAME=kibana_system
       - ELASTICSEARCH_PASSWORD=${KIBANA_PASSWORD}
 
-  # One-shot container that imports saved objects into Kibana.
-  kibana-setup:
-    image: curlimages/curl:8.5.0
-    depends_on:
-      - kibana
-    environment:
-      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
-    volumes:
-      - ./kibana:/kibana:ro
-    entrypoint: ["/bin/sh", "/kibana/setup.sh"]
-    restart: "no"
 
   # ================================================================
   # Loki / Grafana stack
