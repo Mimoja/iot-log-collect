@@ -1,15 +1,4 @@
 services:
-
-  # Receives journal uploads from edge devices via HTTP POST /upload
-  # nginx reverse-proxies /journal-upload/upload -> this container's :19532/upload
-  journal-remote:
-    build: ./journal-remote
-    volumes:
-      - journal-remote-data:/var/log/journal/remote
-    ports:
-      - "127.0.0.1:19532:19532"
-    restart: unless-stopped
-
   fluentd:
     build: ./fluentd
     volumes:
@@ -20,15 +9,11 @@ services:
       # Mount host systemd journal (read-only)
       - /var/log/journal:/var/log/journal:ro
       - /run/log/journal:/run/log/journal:ro
-      # Mount remote journal files written by journal-remote
-      - journal-remote-data:/var/log/journal-remote:ro
       # Persistent cursor storage so fluentd remembers journal position
       - fluentd-log:/fluentd/log
     depends_on:
       elasticsearch:
         condition: service_healthy
-      journal-remote:
-        condition: service_started
     environment:
       # Fluentd needs ES credentials to write data
       - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
@@ -118,4 +103,3 @@ services:
 volumes:
   es-data:
   fluentd-log:
-  journal-remote-data:

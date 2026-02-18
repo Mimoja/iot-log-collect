@@ -1,7 +1,7 @@
 FROM fluent/fluentd:edge-debian
 USER root
 
-# Install build dependencies for native extensions (systemd journal plugin)
+# Install build dependencies for native extensions (host systemd journal plugin)
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
       build-essential \
