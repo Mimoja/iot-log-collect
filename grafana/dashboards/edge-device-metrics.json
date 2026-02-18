@@ -1,0 +1,83 @@
+{
+  "annotations": { "list": [] },
+  "description": "Edge device hardware metrics (CPU, memory, disk, network, thermal) collected via Fluent Bit and stored in Loki.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [
+    { "icon": "dashboard", "includeVars": true, "keepTime": true, "title": "Fleet Overview", "type": "link", "url": "/d/fleet-overview/fleet-overview" }
+  ],
+  "panels": [
+    {
+      "datasource": { "type": "loki", "uid": "" },
+      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "axisLabel": "% used", "drawStyle": "line", "fillOpacity": 20, "lineWidth": 2, "spanNulls": true }, "unit": "percent", "min": 0, "max": 100 } },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "id": 1,
+      "options": { "legend": { "calcs": ["mean", "lastNotNull"], "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "title": "CPU Usage",
+      "type": "timeseries",
+      "targets": [{ "datasource": { "type": "loki", "uid": "" }, "expr": "{job=\"edge-metrics\", metric_type=\"cpu\", device_host=~\"$device\"} | json | unwrap cpu_p | __error__=\"\"", "legendFormat": "{{device_host}}", "refId": "A" }]
+    },
+    {
+      "datasource": { "type": "loki", "uid": "" },
+      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "axisLabel": "% used", "drawStyle": "line", "fillOpacity": 20, "lineWidth": 2, "spanNulls": true }, "unit": "percent", "min": 0, "max": 100 } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "id": 2,
+      "options": { "legend": { "calcs": ["mean", "lastNotNull"], "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "title": "Memory Usage",
+      "type": "timeseries",
+      "targets": [{ "datasource": { "type": "loki", "uid": "" }, "expr": "{job=\"edge-metrics\", metric_type=\"mem\", device_host=~\"$device\"} | json | unwrap Mem_used_p | __error__=\"\"", "legendFormat": "{{device_host}}", "refId": "A" }]
+    },
+    {
+      "datasource": { "type": "loki", "uid": "" },
+      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "axisLabel": "bytes/s", "drawStyle": "line", "fillOpacity": 20, "lineWidth": 2, "spanNulls": true }, "unit": "Bps" } },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "id": 3,
+      "options": { "legend": { "calcs": ["mean", "lastNotNull"], "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "title": "Disk I/O",
+      "type": "timeseries",
+      "targets": [
+        { "datasource": { "type": "loki", "uid": "" }, "expr": "{job=\"edge-metrics\", metric_type=\"disk\", device_host=~\"$device\"} | json | unwrap read_size | __error__=\"\"", "legendFormat": "{{device_host}} read", "refId": "A" },
+        { "datasource": { "type": "loki", "uid": "" }, "expr": "{job=\"edge-metrics\", metric_type=\"disk\", device_host=~\"$device\"} | json | unwrap write_size | __error__=\"\"", "legendFormat": "{{device_host}} write", "refId": "B" }
+      ]
+    },
+    {
+      "datasource": { "type": "loki", "uid": "" },
+      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "drawStyle": "line", "fillOpacity": 20, "lineWidth": 2, "spanNulls": true }, "unit": "decbytes" } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "id": 4,
+      "options": { "legend": { "calcs": ["mean", "lastNotNull"], "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "title": "Network I/O (eth0)",
+      "type": "timeseries",
+      "targets": [
+        { "datasource": { "type": "loki", "uid": "" }, "expr": "{job=\"edge-metrics\", metric_type=\"net\", device_host=~\"$device\"} | json | unwrap eth0_rx_bytes | __error__=\"\"", "legendFormat": "{{device_host}} rx", "refId": "A" },
+        { "datasource": { "type": "loki", "uid": "" }, "expr": "{job=\"edge-metrics\", metric_type=\"net\", device_host=~\"$device\"} | json | unwrap eth0_tx_bytes | __error__=\"\"", "legendFormat": "{{device_host}} tx", "refId": "B" }
+      ]
+    },
+    {
+      "datasource": { "type": "loki", "uid": "" },
+      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "drawStyle": "line", "fillOpacity": 20, "lineWidth": 2, "spanNulls": true }, "unit": "celsius" } },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 16 },
+      "id": 5,
+      "options": { "legend": { "calcs": ["mean", "lastNotNull"], "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "title": "Thermal",
+      "type": "timeseries",
+      "targets": [{ "datasource": { "type": "loki", "uid": "" }, "expr": "{job=\"edge-metrics\", metric_type=\"thermal\", device_host=~\"$device\"} | json | unwrap temp | __error__=\"\"", "legendFormat": "{{device_host}}", "refId": "A" }]
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["edge", "metrics", "iot"],
+  "templating": {
+    "list": [
+      { "datasource": { "type": "loki", "uid": "" }, "definition": "label_values({job=\"edge-metrics\"}, device_host)", "includeAll": true, "multi": true, "name": "device", "label": "Device", "query": "label_values({job=\"edge-metrics\"}, device_host)", "refresh": 2, "sort": 1, "type": "query" }
+    ]
+  },
+  "time": { "from": "now-6h", "to": "now" },
+  "timepicker": {},
+  "timezone": "",
+  "title": "Edge Device Metrics",
+  "uid": "edge-device-metrics",
+  "version": 1
+}
