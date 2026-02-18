@@ -55,12 +55,12 @@ echo "$body"
 
 if [ "$http_code" = "200" ]; then
   echo ""
-  echo "==> Setting default data view to 'logs-*'..."
+  echo "==> Setting default data view to 'logs-edge-*'..."
   curl -s -u "${AUTH_USER}:${AUTH_PASS}" \
     -X POST "${KIBANA_URL}/api/data_views/default" \
     -H "kbn-xsrf: true" \
     -H "Content-Type: application/json" \
-    -d '{"data_view_id": "all-logs-index-pattern", "force": true}'
+    -d '{"data_view_id": "logs-edge-index-pattern", "force": true}'
   echo ""
   echo ""
   echo "============================================"
@@ -69,8 +69,8 @@ if [ "$http_code" = "200" ]; then
   echo "  Login:     elastic / <ELASTIC_PASSWORD>"
   echo ""
   echo "  Dashboards:"
-  echo "    Issues:       http://localhost:5601/app/dashboards#/view/issues-dashboard"
-  echo "    Edge Devices: http://localhost:5601/app/dashboards#/view/edge-device-dashboard"
+  echo "    Fleet Overview: http://localhost:5601/app/dashboards#/view/fleet-overview-dashboard"
+  echo "    Device Logs:    http://localhost:5601/app/dashboards#/view/edge-device-dashboard"
   echo "============================================"
 else
   echo "==> WARNING: Import may have failed (HTTP ${http_code})."

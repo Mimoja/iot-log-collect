@@ -3,27 +3,18 @@ services:
     build: ./fluentd
     volumes:
       - ./fluentd/conf:/fluentd/etc
-      # TLS certificates for edge device forward input
-      # Mount Let's Encrypt certs directly (recommended), or use ./fluentd/certs/ with symlinks
-      - ${FLUENTD_CERT_DIR:-./fluentd/certs}:/fluentd/certs:ro
-      # Mount host systemd journal (read-only)
-      - /var/log/journal:/var/log/journal:ro
-      - /run/log/journal:/run/log/journal:ro
-      # Persistent cursor storage so fluentd remembers journal position
+      # TLS certificates — mount entire letsencrypt tree so symlinks resolve
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      # Persistent cursor storage so fluentd remembers position
       - fluentd-log:/fluentd/log
     depends_on:
       elasticsearch:
         condition: service_healthy
     environment:
-      # Fluentd needs ES credentials to write data
       - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
     ports:
-      - "127.0.0.1:24224:24224"
-      - "127.0.0.1:24224:24224/udp"
       # Edge device forward input (TLS + shared_key auth)
       - "24225:24225"
-      # HTTP input for Sentry webhooks
-      - "127.0.0.1:9880:9880"
 
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.17.1
@@ -49,7 +40,6 @@ services:
       - es-data:/usr/share/elasticsearch/data
 
   # One-shot container that sets the kibana_system user password in ES.
-  # This must run after ES is healthy but before Kibana can connect.
   es-setup:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.17.1
     depends_on:
@@ -87,8 +77,7 @@ services:
       - ELASTICSEARCH_USERNAME=kibana_system
       - ELASTICSEARCH_PASSWORD=${KIBANA_PASSWORD}
 
-  # One-shot container that waits for Kibana to be ready, then imports
-  # pre-built saved objects (index patterns, searches, visualizations, dashboard).
+  # One-shot container that imports saved objects into Kibana.
   kibana-setup:
     image: curlimages/curl:8.5.0
     depends_on:
