@@ -55,7 +55,7 @@ echo "$body"
 
 if [ "$http_code" = "200" ]; then
   echo ""
-  echo "==> Setting default data view to 'logs-edge-*'..."
+  echo "==> Setting default data view to 'edge-*'..."
   curl -s -u "${AUTH_USER}:${AUTH_PASS}" \
     -X POST "${KIBANA_URL}/api/data_views/default" \
     -H "kbn-xsrf: true" \
