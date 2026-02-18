@@ -55,7 +55,7 @@ echo "$body"
 
 if [ "$http_code" = "200" ]; then
   echo ""
-  echo "==> Setting default data view to 'all-logs-*'..."
+  echo "==> Setting default data view to 'logs-*'..."
   curl -s -u "${AUTH_USER}:${AUTH_PASS}" \
     -X POST "${KIBANA_URL}/api/data_views/default" \
     -H "kbn-xsrf: true" \
@@ -67,7 +67,10 @@ if [ "$http_code" = "200" ]; then
   echo "  Kibana setup complete!"
   echo "  URL:       http://localhost:5601"
   echo "  Login:     elastic / <ELASTIC_PASSWORD>"
-  echo "  Dashboard: http://localhost:5601/app/dashboards#/view/issues-dashboard"
+  echo ""
+  echo "  Dashboards:"
+  echo "    Issues:       http://localhost:5601/app/dashboards#/view/issues-dashboard"
+  echo "    Edge Devices: http://localhost:5601/app/dashboards#/view/edge-device-dashboard"
   echo "============================================"
 else
   echo "==> WARNING: Import may have failed (HTTP ${http_code})."
