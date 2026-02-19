@@ -16,20 +16,6 @@ processors:
     timeout: 1s
     send_batch_size: 1024
 
-  # Move host.name and service.name from datapoint attributes to resource
-  # attributes so Mimir indexes them as labels.
-  transform/metrics:
-    metric_statements:
-      - context: resource
-        statements:
-          - set(attributes["service.name"], "edge") where attributes["service.name"] == nil
-      - context: datapoint
-        statements:
-          - set(resource.attributes["host.name"], attributes["host.name"]) where attributes["host.name"] != nil
-          - delete_key(attributes, "host.name")
-          - set(resource.attributes["service.name"], attributes["service.name"]) where attributes["service.name"] != nil
-          - delete_key(attributes, "service.name")
-
 exporters:
   otlphttp/mimir:
     endpoint: http://mimir:9009/otlp
@@ -46,5 +32,5 @@ service:
   pipelines:
     metrics:
       receivers: [otlp]
-      processors: [transform/metrics, batch]
+      processors: [batch]
       exporters: [otlphttp/mimir, debug]
