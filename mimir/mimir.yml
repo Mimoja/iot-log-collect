@@ -37,6 +37,8 @@ store_gateway:
 limits:
   # Keep metrics for 30 days
   compactor_blocks_retention_period: 720h
+  # Accept out-of-order samples (common with OTLP batched delivery)
+  out_of_order_time_window: 5m
 
 activity_tracker:
   filepath: /data/activity.log
