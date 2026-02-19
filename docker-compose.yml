@@ -13,7 +13,7 @@ services:
       loki:
         condition: service_healthy
       mimir:
-        condition: service_healthy
+        condition: service_started
     ports:
       # OTLP/HTTP receiver (TLS) — edge devices send here
       - "4318:4318"
@@ -48,11 +48,6 @@ services:
       - mimir-data:/data
     ports:
       - "127.0.0.1:9009:9009"
-    healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:9009/ready || exit 1"]
-      interval: 10s
-      retries: 15
-      timeout: 5s
     restart: always
 
   # ================================================================
@@ -64,7 +59,7 @@ services:
       loki:
         condition: service_healthy
       mimir:
-        condition: service_healthy
+        condition: service_started
     ports:
       - "127.0.0.1:3000:3000"
     environment:
