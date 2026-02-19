@@ -9,8 +9,6 @@ services:
       # Persistent cursor storage so fluentd remembers position
       - fluentd-log:/fluentd/log
     depends_on:
-      elasticsearch:
-        condition: service_healthy
       loki:
         condition: service_healthy
     environment:
