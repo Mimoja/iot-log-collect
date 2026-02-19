@@ -1,22 +1,38 @@
 services:
   # ================================================================
-  # OpenTelemetry Collector — central receiver for edge devices
+  # Fluentd — log collector (receives forward protocol from edge devices)
+  # ================================================================
+  fluentd:
+    build: ./fluentd
+    command: fluentd -q
+    volumes:
+      - ./fluentd/conf:/fluentd/etc
+      # TLS certificates — mount entire letsencrypt tree so symlinks resolve
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      # Persistent buffer storage
+      - fluentd-log:/fluentd/log
+    depends_on:
+      loki:
+        condition: service_healthy
+    ports:
+      # Edge device forward input (TLS + shared_key auth)
+      - "24225:24225"
+    restart: always
+
+  # ================================================================
+  # OpenTelemetry Collector — metrics receiver (OTLP from edge devices)
   # ================================================================
   otelcol:
     image: otel/opentelemetry-collector-contrib:latest
     command: ["--config", "/etc/otelcol/otelcol.yml"]
     volumes:
       - ./otelcol/otelcol.yml:/etc/otelcol/otelcol.yml:ro
-      # TLS certificates — mount entire letsencrypt tree so symlinks resolve
+      # TLS certificates
       - /etc/letsencrypt:/etc/letsencrypt:ro
     depends_on:
-      loki:
-        condition: service_healthy
       mimir:
         condition: service_started
     ports:
-      # Fluent Bit forward receiver (TLS) — edge devices send logs here
-      - "8006:8006"
       # OTLP/HTTP receiver (TLS) — edge devices send metrics here
       - "4318:4318"
     restart: always
@@ -75,6 +91,7 @@ services:
     restart: always
 
 volumes:
+  fluentd-log:
   loki-data:
   mimir-data:
   grafana-data:
