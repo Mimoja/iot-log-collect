@@ -30,10 +30,6 @@ ingester:
   max_chunk_age: 2h
   chunk_target_size: 1048576
   chunk_retain_period: 30s
-  # Accept out-of-order log entries within a stream. Edge devices may
-  # buffer journal entries and send them after newer entries have already
-  # been ingested (e.g. after network reconnect).
-  unordered_writes: true
 
 schema_config:
   configs:
