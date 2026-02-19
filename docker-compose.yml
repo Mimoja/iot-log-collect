@@ -41,7 +41,7 @@ services:
   # Loki — log storage
   # ================================================================
   loki:
-    image: grafana/loki:main
+    image: grafana/loki:3.6
     command: -config.file=/etc/loki/loki.yml
     volumes:
       - ./loki/loki.yml:/etc/loki/loki.yml:ro
@@ -59,7 +59,7 @@ services:
   # Mimir — metrics storage
   # ================================================================
   mimir:
-    image: grafana/mimir:2.15.0
+    image: grafana/mimir:3.0.3
     command: -config.file=/etc/mimir/mimir.yml
     volumes:
       - ./mimir/mimir.yml:/etc/mimir/mimir.yml:ro
