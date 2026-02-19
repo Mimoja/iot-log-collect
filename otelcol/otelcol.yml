@@ -16,8 +16,8 @@ processors:
     timeout: 1s
     send_batch_size: 1024
 
-  # Move host.name and service.name from datapoint attributes to resource
-  # attributes so Mimir indexes them as labels.
+  # Ensure service.name is set, and move host.name to resource attributes
+  # if Fluent Bit placed it at the datapoint level via add_label.
   transform/metrics:
     metric_statements:
       - context: resource
@@ -25,7 +25,9 @@ processors:
           - set(attributes["service.name"], "edge") where attributes["service.name"] == nil
       - context: datapoint
         statements:
-          - set(resource.attributes["host.name"], attributes["host.name"]) where attributes["host.name"] != nil
+          # Fluent Bit add_label puts host.name at the datapoint level;
+          # move it to resource attributes so Mimir indexes it as a label.
+          - set(resource.attributes["host.name"], attributes["host.name"]) where resource.attributes["host.name"] == nil and attributes["host.name"] != nil
           - delete_key(attributes, "host.name")
           - set(resource.attributes["service.name"], attributes["service.name"]) where attributes["service.name"] != nil
           - delete_key(attributes, "service.name")
@@ -37,12 +39,12 @@ exporters:
       insecure: true
 
   debug:
-    verbosity: basic
+    verbosity: detailed
 
 service:
   telemetry:
     logs:
-      level: warn
+      level: info
   pipelines:
     metrics:
       receivers: [otlp]
