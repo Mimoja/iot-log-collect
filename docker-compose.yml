@@ -25,7 +25,7 @@ services:
   # ================================================================
 
   loki:
-    image: grafana/loki:3.4.2
+    image: grafana/loki:main
     command: -config.file=/etc/loki/loki.yml
     volumes:
       - ./loki/loki.yml:/etc/loki/loki.yml:ro
@@ -39,7 +39,7 @@ services:
       timeout: 5s
 
   grafana:
-    image: grafana/grafana:11.5.2
+    image: grafana/grafana:main
     depends_on:
       loki:
         condition: service_healthy
