@@ -16,9 +16,8 @@ processors:
     timeout: 1s
     send_batch_size: 1024
 
-  # Set default service.name and promote host.name to resource attributes.
-  # Fluent Bit add_label may place host.name at the datapoint or metric level.
-  # We check all contexts to find it.
+  # Move host.name and service.name from datapoint attributes to resource
+  # attributes so Mimir indexes them as labels.
   transform/metrics:
     metric_statements:
       - context: resource
@@ -26,17 +25,10 @@ processors:
           - set(attributes["service.name"], "edge") where attributes["service.name"] == nil
       - context: datapoint
         statements:
-          - set(resource.attributes["host.name"], attributes["host.name"]) where resource.attributes["host.name"] == nil and attributes["host.name"] != nil
+          - set(resource.attributes["host.name"], attributes["host.name"]) where attributes["host.name"] != nil
           - delete_key(attributes, "host.name")
           - set(resource.attributes["service.name"], attributes["service.name"]) where attributes["service.name"] != nil
           - delete_key(attributes, "service.name")
-
-  # Fallback: copy host.name from metric-level attributes to resource
-  # attributes using the groupbyattrs processor. This handles the case
-  # where Fluent Bit places add_label values at the metric level.
-  groupbyattrs:
-    keys:
-      - host.name
 
 exporters:
   otlphttp/mimir:
@@ -45,14 +37,14 @@ exporters:
       insecure: true
 
   debug:
-    verbosity: detailed
+    verbosity: basic
 
 service:
   telemetry:
     logs:
-      level: info
+      level: warn
   pipelines:
     metrics:
       receivers: [otlp]
-      processors: [groupbyattrs, transform/metrics, batch]
+      processors: [transform/metrics, batch]
       exporters: [otlphttp/mimir, debug]
