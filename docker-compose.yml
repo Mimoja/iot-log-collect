@@ -17,6 +17,7 @@ services:
     ports:
       # OTLP/HTTP receiver (TLS) — edge devices send here
       - "4318:4318"
+    restart: always
 
   # ================================================================
   # Loki — log storage
@@ -34,6 +35,7 @@ services:
       interval: 10s
       retries: 10
       timeout: 5s
+    restart: always
 
   # ================================================================
   # Mimir — metrics storage
@@ -51,6 +53,7 @@ services:
       interval: 10s
       retries: 15
       timeout: 5s
+    restart: always
 
   # ================================================================
   # Grafana — dashboards
@@ -72,6 +75,7 @@ services:
       - grafana-data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
       - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    restart: always
 
 volumes:
   loki-data:
