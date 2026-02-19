@@ -1,8 +1,18 @@
 # OpenTelemetry Collector configuration
-# Receives OTLP from edge devices (Fluent Bit) over TLS,
-# fans out logs to Loki and metrics to Mimir.
+# Receives logs via Fluent Bit forward protocol (preserves all record fields),
+# receives metrics via OTLP. Fans out logs to Loki and metrics to Mimir.
 
 receivers:
+  # Logs: Fluent Bit forward protocol (TLS + shared_key)
+  # All systemd journal fields arrive as structured log attributes.
+  fluentforward:
+    endpoint: 0.0.0.0:8006
+    tls:
+      cert_file: /etc/letsencrypt/live/sentry.meticulousespresso.com/fullchain.pem
+      key_file: /etc/letsencrypt/live/sentry.meticulousespresso.com/privkey.pem
+    shared_key: meticulous-edge-logs
+
+  # Metrics: OTLP/HTTP (TLS)
   otlp:
     protocols:
       http:
@@ -16,21 +26,31 @@ processors:
     timeout: 1s
     send_batch_size: 1024
 
-  # Fluent Bit's Add_Label puts service.name and host.name as record
-  # attributes, but OTel expects them as resource attributes.
-  # Move them up so Loki/Mimir index them correctly.
+  # Map Fluent Bit forward record fields to proper OTel structure:
+  # - message → log body
+  # - hostname → resource attribute host.name
+  # - service.name=edge → resource attribute
+  # - severity → OTel severity text
+  # All other fields (systemd_unit, syslog_identifier, pid, comm,
+  # exe, transport, boot_id, etc.) stay as log attributes and end
+  # up as structured metadata in Loki.
   transform/logs:
     log_statements:
       - context: resource
         statements:
-          - set(attributes["service.name"], "edge") where attributes["service.name"] == nil
+          - set(attributes["service.name"], "edge")
       - context: log
         statements:
-          - set(resource.attributes["host.name"], attributes["host.name"]) where attributes["host.name"] != nil
-          - delete_key(attributes, "host.name")
-          - set(resource.attributes["service.name"], attributes["service.name"]) where attributes["service.name"] != nil
-          - delete_key(attributes, "service.name")
+          # Move hostname from record field to resource attribute
+          - set(resource.attributes["host.name"], attributes["hostname"]) where attributes["hostname"] != nil
+          - delete_key(attributes, "hostname")
+          # Use message field as the log body
+          - set(body, attributes["message"]) where attributes["message"] != nil
+          - delete_key(attributes, "message")
+          # Map severity attribute to OTel severity
+          - set(severity_text, attributes["severity"]) where attributes["severity"] != nil
 
+  # Metrics: move host.name and service.name from datapoint to resource attributes
   transform/metrics:
     metric_statements:
       - context: resource
@@ -57,15 +77,15 @@ exporters:
       insecure: true
 
   debug:
-    verbosity: basic
+    verbosity: detailed
 
 service:
   telemetry:
     logs:
-      level: warn
+      level: info
   pipelines:
     logs:
-      receivers: [otlp]
+      receivers: [fluentforward]
       processors: [transform/logs, batch]
       exporters: [otlphttp/loki, debug]
     metrics:

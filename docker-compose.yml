@@ -15,7 +15,9 @@ services:
       mimir:
         condition: service_started
     ports:
-      # OTLP/HTTP receiver (TLS) — edge devices send here
+      # Fluent Bit forward receiver (TLS) — edge devices send logs here
+      - "8006:8006"
+      # OTLP/HTTP receiver (TLS) — edge devices send metrics here
       - "4318:4318"
     restart: always
 
