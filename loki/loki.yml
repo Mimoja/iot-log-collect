@@ -58,12 +58,11 @@ limits_config:
             - host.name
     # Promote these OTel log record attributes to indexed Loki labels
     log_attributes:
-      attributes_config:
-        - action: index_label
-          attributes:
-            - severity
-            - systemd_unit
-            - syslog_identifier
+      - action: index_label
+        attributes:
+          - severity
+          - systemd_unit
+          - syslog_identifier
 
 compactor:
   working_directory: /loki/compactor
