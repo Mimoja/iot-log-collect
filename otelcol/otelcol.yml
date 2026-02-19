@@ -1,0 +1,48 @@
+# OpenTelemetry Collector configuration
+# Receives OTLP from edge devices (Fluent Bit) over TLS,
+# fans out logs to Loki and metrics to Mimir.
+
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:4318
+        tls:
+          cert_file: /etc/letsencrypt/live/sentry.meticulousespresso.com/fullchain.pem
+          key_file: /etc/letsencrypt/live/sentry.meticulousespresso.com/privkey.pem
+
+processors:
+  # Add resource attributes for edge device identification
+  batch:
+    timeout: 1s
+    send_batch_size: 1024
+
+exporters:
+  # Logs → Loki (native OTLP ingestion)
+  otlphttp/loki:
+    endpoint: http://loki:3100/otlp
+    tls:
+      insecure: true
+
+  # Metrics → Mimir (native OTLP ingestion)
+  otlphttp/mimir:
+    endpoint: http://mimir:9009/otlp
+    tls:
+      insecure: true
+
+  debug:
+    verbosity: basic
+
+service:
+  telemetry:
+    logs:
+      level: warn
+  pipelines:
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlphttp/loki, debug]
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlphttp/mimir, debug]

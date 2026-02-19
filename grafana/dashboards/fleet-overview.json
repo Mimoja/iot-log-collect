@@ -11,83 +11,83 @@
   ],
   "panels": [
     {
-      "datasource": { "type": "loki", "uid": "" },
+      "datasource": { "type": "loki", "uid": "loki" },
       "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "blue", "value": 1 }] } } },
       "gridPos": { "h": 6, "w": 6, "x": 0, "y": 0 },
       "id": 1,
       "options": { "colorMode": "value", "graphMode": "none", "reduceOptions": { "calcs": ["count"], "values": false }, "textMode": "auto" },
       "title": "Active Devices",
       "type": "stat",
-      "targets": [{ "datasource": { "type": "loki", "uid": "" }, "expr": "count(count by (device_host) (count_over_time({job=\"edge\"} [$__range])))", "instant": true, "refId": "A" }]
+      "targets": [{ "datasource": { "type": "loki", "uid": "loki" }, "expr": "count(count by (host_name) (count_over_time({service_name=\"edge\"} [$__range])))", "instant": true, "refId": "A" }]
     },
     {
-      "datasource": { "type": "loki", "uid": "" },
+      "datasource": { "type": "loki", "uid": "loki" },
       "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 1 }, { "color": "red", "value": 100 }] } } },
       "gridPos": { "h": 6, "w": 6, "x": 6, "y": 0 },
       "id": 2,
       "options": { "colorMode": "value", "graphMode": "area", "reduceOptions": { "calcs": ["sum"], "values": false }, "textMode": "auto" },
       "title": "Edge Error Count",
       "type": "stat",
-      "targets": [{ "datasource": { "type": "loki", "uid": "" }, "expr": "sum(count_over_time({job=\"edge\", severity=~\"emerg|alert|crit|err\"} [$__range]))", "instant": true, "refId": "A" }]
+      "targets": [{ "datasource": { "type": "loki", "uid": "loki" }, "expr": "sum(count_over_time({service_name=\"edge\", severity=~\"emerg|alert|crit|err\"} [$__range]))", "instant": true, "refId": "A" }]
     },
     {
-      "datasource": { "type": "loki", "uid": "" },
+      "datasource": { "type": "loki", "uid": "loki" },
       "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "axisLabel": "Log entries", "drawStyle": "bars", "fillOpacity": 80, "stacking": { "mode": "normal" } } } },
       "gridPos": { "h": 6, "w": 12, "x": 12, "y": 0 },
       "id": 3,
       "options": { "legend": { "displayMode": "list", "placement": "right" }, "tooltip": { "mode": "multi", "sort": "desc" } },
       "title": "Severity Breakdown",
       "type": "timeseries",
-      "targets": [{ "datasource": { "type": "loki", "uid": "" }, "expr": "sum by (severity) (count_over_time({job=\"edge\"} [$__auto]))", "legendFormat": "{{severity}}", "refId": "A" }]
+      "targets": [{ "datasource": { "type": "loki", "uid": "loki" }, "expr": "sum by (severity) (count_over_time({service_name=\"edge\"} [$__auto]))", "legendFormat": "{{severity}}", "refId": "A" }]
     },
     {
-      "datasource": { "type": "loki", "uid": "" },
+      "datasource": { "type": "loki", "uid": "loki" },
       "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "axisLabel": "Log entries", "drawStyle": "bars", "fillOpacity": 80, "stacking": { "mode": "normal" } } } },
       "gridPos": { "h": 8, "w": 24, "x": 0, "y": 6 },
       "id": 4,
       "options": { "legend": { "displayMode": "list", "placement": "right" }, "tooltip": { "mode": "multi", "sort": "desc" } },
       "title": "Log Volume by Device",
       "type": "timeseries",
-      "targets": [{ "datasource": { "type": "loki", "uid": "" }, "expr": "sum by (device_host) (count_over_time({job=\"edge\"} [$__auto]))", "legendFormat": "{{device_host}}", "refId": "A" }]
+      "targets": [{ "datasource": { "type": "loki", "uid": "loki" }, "expr": "sum by (host_name) (count_over_time({service_name=\"edge\"} [$__auto]))", "legendFormat": "{{host_name}}", "refId": "A" }]
     },
     {
-      "datasource": { "type": "loki", "uid": "" },
+      "datasource": { "type": "loki", "uid": "loki" },
       "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "axisLabel": "Errors", "drawStyle": "bars", "fillOpacity": 80, "stacking": { "mode": "normal" } } } },
       "gridPos": { "h": 8, "w": 24, "x": 0, "y": 14 },
       "id": 5,
       "options": { "legend": { "displayMode": "list", "placement": "right" }, "tooltip": { "mode": "multi", "sort": "desc" } },
       "title": "Errors Over Time",
       "type": "timeseries",
-      "targets": [{ "datasource": { "type": "loki", "uid": "" }, "expr": "sum by (device_host) (count_over_time({job=\"edge\", severity=~\"emerg|alert|crit|err\"} [$__auto]))", "legendFormat": "{{device_host}}", "refId": "A" }]
+      "targets": [{ "datasource": { "type": "loki", "uid": "loki" }, "expr": "sum by (host_name) (count_over_time({service_name=\"edge\", severity=~\"emerg|alert|crit|err\"} [$__auto]))", "legendFormat": "{{host_name}}", "refId": "A" }]
     },
     {
-      "datasource": { "type": "loki", "uid": "" },
+      "datasource": { "type": "loki", "uid": "loki" },
       "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "orientation": "horizontal" } } },
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 22 },
       "id": 6,
       "options": { "legend": { "displayMode": "hidden" }, "tooltip": { "mode": "single" } },
       "title": "Top Failing Units",
       "type": "barchart",
-      "targets": [{ "datasource": { "type": "loki", "uid": "" }, "expr": "topk(15, sum by (device_unit) (count_over_time({job=\"edge\", severity=~\"emerg|alert|crit|err\"} [$__range])))", "instant": true, "legendFormat": "{{device_unit}}", "refId": "A" }]
+      "targets": [{ "datasource": { "type": "loki", "uid": "loki" }, "expr": "topk(15, sum by (systemd_unit) (count_over_time({service_name=\"edge\", severity=~\"emerg|alert|crit|err\"} [$__range])))", "instant": true, "legendFormat": "{{systemd_unit}}", "refId": "A" }]
     },
     {
-      "datasource": { "type": "loki", "uid": "" },
+      "datasource": { "type": "loki", "uid": "loki" },
       "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "orientation": "horizontal" } } },
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 22 },
       "id": 7,
       "options": { "legend": { "displayMode": "hidden" }, "tooltip": { "mode": "single" } },
       "title": "Top Failing Devices",
       "type": "barchart",
-      "targets": [{ "datasource": { "type": "loki", "uid": "" }, "expr": "topk(20, sum by (device_host) (count_over_time({job=\"edge\", severity=~\"emerg|alert|crit|err\"} [$__range])))", "instant": true, "legendFormat": "{{device_host}}", "refId": "A" }]
+      "targets": [{ "datasource": { "type": "loki", "uid": "loki" }, "expr": "topk(20, sum by (host_name) (count_over_time({service_name=\"edge\", severity=~\"emerg|alert|crit|err\"} [$__range])))", "instant": true, "legendFormat": "{{host_name}}", "refId": "A" }]
     },
     {
-      "datasource": { "type": "loki", "uid": "" },
+      "datasource": { "type": "loki", "uid": "loki" },
       "gridPos": { "h": 12, "w": 24, "x": 0, "y": 30 },
       "id": 8,
       "options": { "dedupStrategy": "none", "enableLogDetails": true, "showLabels": true, "showTime": true, "sortOrder": "Descending", "wrapLogMessage": true },
       "title": "Recent Errors",
       "type": "logs",
-      "targets": [{ "datasource": { "type": "loki", "uid": "" }, "expr": "{job=\"edge\", severity=~\"emerg|alert|crit|err\"}", "refId": "A" }]
+      "targets": [{ "datasource": { "type": "loki", "uid": "loki" }, "expr": "{service_name=\"edge\", severity=~\"emerg|alert|crit|err\"}", "refId": "A" }]
     }
   ],
   "refresh": "30s",

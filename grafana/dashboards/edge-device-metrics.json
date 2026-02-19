@@ -1,6 +1,6 @@
 {
   "annotations": { "list": [] },
-  "description": "Edge device hardware metrics (CPU, memory, disk, network, thermal) collected via Fluent Bit, exposed by Fluentd as Prometheus gauges, and stored in Prometheus.",
+  "description": "Edge device hardware metrics (CPU, memory, disk, network, thermal) collected via Fluent Bit node_exporter_metrics, sent over OTLP, and stored in Mimir.",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -10,7 +10,7 @@
   ],
   "panels": [
     {
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "datasource": { "type": "prometheus", "uid": "mimir" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
@@ -26,17 +26,20 @@
       "title": "CPU Usage",
       "type": "timeseries",
       "targets": [
-        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "edge_cpu_usage_percent{device_host=~\"$device\"}", "legendFormat": "{{device_host}} total", "refId": "A" },
-        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "edge_cpu_user_percent{device_host=~\"$device\"}", "legendFormat": "{{device_host}} user", "refId": "B" },
-        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "edge_cpu_system_percent{device_host=~\"$device\"}", "legendFormat": "{{device_host}} system", "refId": "C" }
+        {
+          "datasource": { "type": "prometheus", "uid": "mimir" },
+          "expr": "100 - (avg by (host_name) (rate(node_cpu_seconds_total{service_name=\"edge\", host_name=~\"$device\", mode=\"idle\"}[$__rate_interval])) * 100)",
+          "legendFormat": "{{host_name}}",
+          "refId": "A"
+        }
       ]
     },
     {
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "datasource": { "type": "prometheus", "uid": "mimir" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
-          "custom": { "axisLabel": "bytes", "drawStyle": "line", "fillOpacity": 20, "lineWidth": 2, "spanNulls": true, "stacking": { "mode": "normal" } },
+          "custom": { "axisLabel": "bytes", "drawStyle": "line", "fillOpacity": 20, "lineWidth": 2, "spanNulls": true },
           "unit": "decbytes"
         }
       },
@@ -46,13 +49,28 @@
       "title": "Memory Usage",
       "type": "timeseries",
       "targets": [
-        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "edge_memory_used_bytes{device_host=~\"$device\"} * 1024", "legendFormat": "{{device_host}} used", "refId": "A" },
-        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "edge_memory_free_bytes{device_host=~\"$device\"} * 1024", "legendFormat": "{{device_host}} free", "refId": "B" },
-        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "edge_memory_total_bytes{device_host=~\"$device\"} * 1024", "legendFormat": "{{device_host}} total", "refId": "C" }
+        {
+          "datasource": { "type": "prometheus", "uid": "mimir" },
+          "expr": "node_memory_MemTotal_bytes{service_name=\"edge\", host_name=~\"$device\"} - node_memory_MemAvailable_bytes{service_name=\"edge\", host_name=~\"$device\"}",
+          "legendFormat": "{{host_name}} used",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "mimir" },
+          "expr": "node_memory_MemAvailable_bytes{service_name=\"edge\", host_name=~\"$device\"}",
+          "legendFormat": "{{host_name}} available",
+          "refId": "B"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "mimir" },
+          "expr": "node_memory_MemTotal_bytes{service_name=\"edge\", host_name=~\"$device\"}",
+          "legendFormat": "{{host_name}} total",
+          "refId": "C"
+        }
       ]
     },
     {
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "datasource": { "type": "prometheus", "uid": "mimir" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
@@ -66,31 +84,51 @@
       "title": "Disk I/O",
       "type": "timeseries",
       "targets": [
-        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "edge_disk_read_bytes{device_host=~\"$device\"}", "legendFormat": "{{device_host}} read", "refId": "A" },
-        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "edge_disk_write_bytes{device_host=~\"$device\"}", "legendFormat": "{{device_host}} write", "refId": "B" }
+        {
+          "datasource": { "type": "prometheus", "uid": "mimir" },
+          "expr": "sum by (host_name) (rate(node_disk_read_bytes_total{service_name=\"edge\", host_name=~\"$device\"}[$__rate_interval]))",
+          "legendFormat": "{{host_name}} read",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "mimir" },
+          "expr": "sum by (host_name) (rate(node_disk_written_bytes_total{service_name=\"edge\", host_name=~\"$device\"}[$__rate_interval]))",
+          "legendFormat": "{{host_name}} write",
+          "refId": "B"
+        }
       ]
     },
     {
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "datasource": { "type": "prometheus", "uid": "mimir" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
           "custom": { "drawStyle": "line", "fillOpacity": 20, "lineWidth": 2, "spanNulls": true },
-          "unit": "decbytes"
+          "unit": "Bps"
         }
       },
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
       "id": 4,
       "options": { "legend": { "calcs": ["mean", "lastNotNull"], "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "multi", "sort": "desc" } },
-      "title": "Network I/O (eth0)",
+      "title": "Network I/O",
       "type": "timeseries",
       "targets": [
-        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "edge_net_rx_bytes{device_host=~\"$device\"}", "legendFormat": "{{device_host}} rx", "refId": "A" },
-        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "edge_net_tx_bytes{device_host=~\"$device\"}", "legendFormat": "{{device_host}} tx", "refId": "B" }
+        {
+          "datasource": { "type": "prometheus", "uid": "mimir" },
+          "expr": "sum by (host_name) (rate(node_network_receive_bytes_total{service_name=\"edge\", host_name=~\"$device\"}[$__rate_interval]))",
+          "legendFormat": "{{host_name}} rx",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "mimir" },
+          "expr": "sum by (host_name) (rate(node_network_transmit_bytes_total{service_name=\"edge\", host_name=~\"$device\"}[$__rate_interval]))",
+          "legendFormat": "{{host_name}} tx",
+          "refId": "B"
+        }
       ]
     },
     {
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "datasource": { "type": "prometheus", "uid": "mimir" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
@@ -104,11 +142,16 @@
       "title": "Thermal",
       "type": "timeseries",
       "targets": [
-        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "edge_thermal_celsius{device_host=~\"$device\"}", "legendFormat": "{{device_host}}", "refId": "A" }
+        {
+          "datasource": { "type": "prometheus", "uid": "mimir" },
+          "expr": "node_thermal_zone_temp{service_name=\"edge\", host_name=~\"$device\"}",
+          "legendFormat": "{{host_name}} zone{{zone}}",
+          "refId": "A"
+        }
       ]
     },
     {
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "datasource": { "type": "prometheus", "uid": "mimir" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
@@ -122,8 +165,18 @@
       "title": "Swap Usage",
       "type": "timeseries",
       "targets": [
-        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "edge_swap_used_bytes{device_host=~\"$device\"} * 1024", "legendFormat": "{{device_host}} used", "refId": "A" },
-        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "edge_swap_total_bytes{device_host=~\"$device\"} * 1024", "legendFormat": "{{device_host}} total", "refId": "B" }
+        {
+          "datasource": { "type": "prometheus", "uid": "mimir" },
+          "expr": "node_memory_SwapTotal_bytes{service_name=\"edge\", host_name=~\"$device\"} - node_memory_SwapFree_bytes{service_name=\"edge\", host_name=~\"$device\"}",
+          "legendFormat": "{{host_name}} used",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "mimir" },
+          "expr": "node_memory_SwapTotal_bytes{service_name=\"edge\", host_name=~\"$device\"}",
+          "legendFormat": "{{host_name}} total",
+          "refId": "B"
+        }
       ]
     }
   ],
@@ -133,13 +186,13 @@
   "templating": {
     "list": [
       {
-        "datasource": { "type": "prometheus", "uid": "prometheus" },
-        "definition": "label_values(edge_cpu_usage_percent, device_host)",
+        "datasource": { "type": "prometheus", "uid": "mimir" },
+        "definition": "label_values(node_cpu_seconds_total{service_name=\"edge\"}, host_name)",
         "includeAll": true,
         "multi": true,
         "name": "device",
         "label": "Device",
-        "query": "label_values(edge_cpu_usage_percent, device_host)",
+        "query": "label_values(node_cpu_seconds_total{service_name=\"edge\"}, host_name)",
         "refresh": 2,
         "sort": 1,
         "type": "query"

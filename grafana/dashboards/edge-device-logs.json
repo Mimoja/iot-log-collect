@@ -1,6 +1,6 @@
 {
   "annotations": { "list": [] },
-  "description": "Per-machine log viewing dashboard for Meticulous edge devices.",
+  "description": "Per-machine log viewing dashboard for Meticulous edge devices. Logs ingested via OTLP into Loki.",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -10,72 +10,72 @@
   ],
   "panels": [
     {
-      "datasource": { "type": "loki", "uid": "" },
+      "datasource": { "type": "loki", "uid": "loki" },
       "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "blue", "value": 1 }] } } },
       "gridPos": { "h": 6, "w": 6, "x": 0, "y": 0 },
       "id": 1,
       "options": { "colorMode": "value", "graphMode": "none", "reduceOptions": { "calcs": ["count"], "values": false } },
       "title": "Active Devices",
       "type": "stat",
-      "targets": [{ "datasource": { "type": "loki", "uid": "" }, "expr": "count(count by (device_host) (count_over_time({job=\"edge\", device_host=~\"$device\"} [$__range])))", "instant": true, "refId": "A" }]
+      "targets": [{ "datasource": { "type": "loki", "uid": "loki" }, "expr": "count(count by (host_name) (count_over_time({service_name=\"edge\", host_name=~\"$device\"} [$__range])))", "instant": true, "refId": "A" }]
     },
     {
-      "datasource": { "type": "loki", "uid": "" },
+      "datasource": { "type": "loki", "uid": "loki" },
       "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 1 }, { "color": "red", "value": 100 }] } } },
       "gridPos": { "h": 6, "w": 6, "x": 6, "y": 0 },
       "id": 2,
       "options": { "colorMode": "value", "graphMode": "area", "reduceOptions": { "calcs": ["sum"], "values": false } },
       "title": "Error Count",
       "type": "stat",
-      "targets": [{ "datasource": { "type": "loki", "uid": "" }, "expr": "sum(count_over_time({job=\"edge\", device_host=~\"$device\", device_unit=~\"$service\", severity=~\"emerg|alert|crit|err\"} [$__range]))", "instant": true, "refId": "A" }]
+      "targets": [{ "datasource": { "type": "loki", "uid": "loki" }, "expr": "sum(count_over_time({service_name=\"edge\", host_name=~\"$device\", systemd_unit=~\"$service\", severity=~\"emerg|alert|crit|err\"} [$__range]))", "instant": true, "refId": "A" }]
     },
     {
-      "datasource": { "type": "loki", "uid": "" },
+      "datasource": { "type": "loki", "uid": "loki" },
       "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "axisLabel": "Log entries", "drawStyle": "bars", "fillOpacity": 80, "stacking": { "mode": "normal" } } } },
       "gridPos": { "h": 6, "w": 12, "x": 12, "y": 0 },
       "id": 3,
       "options": { "legend": { "displayMode": "list", "placement": "right" }, "tooltip": { "mode": "multi", "sort": "desc" } },
       "title": "Severity Breakdown",
       "type": "timeseries",
-      "targets": [{ "datasource": { "type": "loki", "uid": "" }, "expr": "sum by (severity) (count_over_time({job=\"edge\", device_host=~\"$device\", device_unit=~\"$service\", severity=~\"$severity\"} [$__auto]))", "legendFormat": "{{severity}}", "refId": "A" }]
+      "targets": [{ "datasource": { "type": "loki", "uid": "loki" }, "expr": "sum by (severity) (count_over_time({service_name=\"edge\", host_name=~\"$device\", systemd_unit=~\"$service\", severity=~\"$severity\"} [$__auto]))", "legendFormat": "{{severity}}", "refId": "A" }]
     },
     {
-      "datasource": { "type": "loki", "uid": "" },
+      "datasource": { "type": "loki", "uid": "loki" },
       "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "axisLabel": "Log entries", "drawStyle": "bars", "fillOpacity": 80, "stacking": { "mode": "normal" } } } },
       "gridPos": { "h": 8, "w": 24, "x": 0, "y": 6 },
       "id": 4,
       "options": { "legend": { "displayMode": "list", "placement": "right" }, "tooltip": { "mode": "multi", "sort": "desc" } },
       "title": "Log Volume by Service",
       "type": "timeseries",
-      "targets": [{ "datasource": { "type": "loki", "uid": "" }, "expr": "sum by (device_unit) (count_over_time({job=\"edge\", device_host=~\"$device\", device_unit=~\"$service\", severity=~\"$severity\"} [$__auto]))", "legendFormat": "{{device_unit}}", "refId": "A" }]
+      "targets": [{ "datasource": { "type": "loki", "uid": "loki" }, "expr": "sum by (systemd_unit) (count_over_time({service_name=\"edge\", host_name=~\"$device\", systemd_unit=~\"$service\", severity=~\"$severity\"} [$__auto]))", "legendFormat": "{{systemd_unit}}", "refId": "A" }]
     },
     {
-      "datasource": { "type": "loki", "uid": "" },
+      "datasource": { "type": "loki", "uid": "loki" },
       "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "axisLabel": "Errors", "drawStyle": "bars", "fillOpacity": 80, "stacking": { "mode": "normal" } } } },
       "gridPos": { "h": 8, "w": 24, "x": 0, "y": 14 },
       "id": 5,
       "options": { "legend": { "displayMode": "list", "placement": "right" }, "tooltip": { "mode": "multi", "sort": "desc" } },
       "title": "Errors Over Time",
       "type": "timeseries",
-      "targets": [{ "datasource": { "type": "loki", "uid": "" }, "expr": "sum by (device_unit) (count_over_time({job=\"edge\", device_host=~\"$device\", device_unit=~\"$service\", severity=~\"emerg|alert|crit|err\"} [$__auto]))", "legendFormat": "{{device_unit}}", "refId": "A" }]
+      "targets": [{ "datasource": { "type": "loki", "uid": "loki" }, "expr": "sum by (systemd_unit) (count_over_time({service_name=\"edge\", host_name=~\"$device\", systemd_unit=~\"$service\", severity=~\"emerg|alert|crit|err\"} [$__auto]))", "legendFormat": "{{systemd_unit}}", "refId": "A" }]
     },
     {
-      "datasource": { "type": "loki", "uid": "" },
+      "datasource": { "type": "loki", "uid": "loki" },
       "gridPos": { "h": 3, "w": 24, "x": 0, "y": 22 },
       "id": 9,
-      "options": { "content": "## Edge Device Logs\n\nUse the **Device**, **Service**, and **Severity** dropdowns above to filter.\n\n**Labels:** `device_host` (hostname), `device_unit` (systemd unit), `severity` (emerg/alert/crit/err/warning/notice/info/debug)", "mode": "markdown" },
+      "options": { "content": "## Edge Device Logs\n\nUse the **Device**, **Service**, and **Severity** dropdowns above to filter.\n\n**Labels:** `host_name` (hostname), `systemd_unit` (systemd unit), `severity` (emerg/alert/crit/err/warning/notice/info/debug)", "mode": "markdown" },
       "title": "",
       "transparent": true,
       "type": "text"
     },
     {
-      "datasource": { "type": "loki", "uid": "" },
+      "datasource": { "type": "loki", "uid": "loki" },
       "gridPos": { "h": 14, "w": 24, "x": 0, "y": 25 },
       "id": 6,
       "options": { "dedupStrategy": "none", "enableLogDetails": true, "showLabels": true, "showTime": true, "sortOrder": "Descending", "wrapLogMessage": true },
       "title": "Log Stream",
       "type": "logs",
-      "targets": [{ "datasource": { "type": "loki", "uid": "" }, "expr": "{job=\"edge\", device_host=~\"$device\", device_unit=~\"$service\", severity=~\"$severity\"}", "refId": "A" }]
+      "targets": [{ "datasource": { "type": "loki", "uid": "loki" }, "expr": "{service_name=\"edge\", host_name=~\"$device\", systemd_unit=~\"$service\", severity=~\"$severity\"}", "refId": "A" }]
     }
   ],
   "refresh": "30s",
@@ -83,9 +83,9 @@
   "tags": ["edge", "device", "iot"],
   "templating": {
     "list": [
-      { "datasource": { "type": "loki", "uid": "" }, "definition": "label_values({job=\"edge\"}, device_host)", "includeAll": true, "multi": true, "name": "device", "label": "Device", "query": "label_values({job=\"edge\"}, device_host)", "refresh": 2, "sort": 1, "type": "query" },
-      { "datasource": { "type": "loki", "uid": "" }, "definition": "label_values({job=\"edge\", device_host=~\"$device\"}, device_unit)", "includeAll": true, "multi": true, "name": "service", "label": "Service", "query": "label_values({job=\"edge\", device_host=~\"$device\"}, device_unit)", "refresh": 2, "sort": 1, "type": "query" },
-      { "datasource": { "type": "loki", "uid": "" }, "definition": "label_values({job=\"edge\"}, severity)", "includeAll": true, "multi": true, "name": "severity", "label": "Severity", "query": "label_values({job=\"edge\"}, severity)", "refresh": 2, "sort": 1, "type": "query" }
+      { "datasource": { "type": "loki", "uid": "loki" }, "definition": "label_values({service_name=\"edge\"}, host_name)", "includeAll": true, "multi": true, "name": "device", "label": "Device", "query": "label_values({service_name=\"edge\"}, host_name)", "refresh": 2, "sort": 1, "type": "query" },
+      { "datasource": { "type": "loki", "uid": "loki" }, "definition": "label_values({service_name=\"edge\", host_name=~\"$device\"}, systemd_unit)", "includeAll": true, "multi": true, "name": "service", "label": "Service", "query": "label_values({service_name=\"edge\", host_name=~\"$device\"}, systemd_unit)", "refresh": 2, "sort": 1, "type": "query" },
+      { "datasource": { "type": "loki", "uid": "loki" }, "definition": "label_values({service_name=\"edge\"}, severity)", "includeAll": true, "multi": true, "name": "severity", "label": "Severity", "query": "label_values({service_name=\"edge\"}, severity)", "refresh": 2, "sort": 1, "type": "query" }
     ]
   },
   "time": { "from": "now-24h", "to": "now" },

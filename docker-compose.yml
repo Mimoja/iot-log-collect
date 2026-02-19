@@ -1,26 +1,26 @@
 services:
-  fluentd:
-    build: ./fluentd
-    command: ["fluentd", "-c", "/fluentd/etc/fluent.conf", "-q"]
+  # ================================================================
+  # OpenTelemetry Collector — central receiver for edge devices
+  # ================================================================
+  otelcol:
+    image: otel/opentelemetry-collector-contrib:latest
+    command: ["--config", "/etc/otelcol/otelcol.yml"]
     volumes:
-      - ./fluentd/conf:/fluentd/etc
+      - ./otelcol/otelcol.yml:/etc/otelcol/otelcol.yml:ro
       # TLS certificates — mount entire letsencrypt tree so symlinks resolve
       - /etc/letsencrypt:/etc/letsencrypt:ro
-      # Persistent cursor storage so fluentd remembers position
-      - fluentd-log:/fluentd/log
     depends_on:
       loki:
         condition: service_healthy
+      mimir:
+        condition: service_healthy
     ports:
-      # Edge device forward input (TLS + shared_key auth)
-      - "24225:24225"
-      # Fluentd Prometheus metrics endpoint
-      - "127.0.0.1:24231:24231"
+      # OTLP/HTTP receiver (TLS) — edge devices send here
+      - "4318:4318"
 
   # ================================================================
-  # Loki / Prometheus / Grafana stack
+  # Loki — log storage
   # ================================================================
-
   loki:
     image: grafana/loki:main
     command: -config.file=/etc/loki/loki.yml
@@ -35,31 +35,32 @@ services:
       retries: 10
       timeout: 5s
 
-  prometheus:
-    image: prom/prometheus:latest
-    command:
-      - --config.file=/etc/prometheus/prometheus.yml
-      - --storage.tsdb.retention.time=30d
+  # ================================================================
+  # Mimir — metrics storage
+  # ================================================================
+  mimir:
+    image: grafana/mimir:2.15.0
+    command: -config.file=/etc/mimir/mimir.yml
     volumes:
-      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - prometheus-data:/prometheus
+      - ./mimir/mimir.yml:/etc/mimir/mimir.yml:ro
+      - mimir-data:/data
     ports:
-      - "127.0.0.1:9090:9090"
-    depends_on:
-      fluentd:
-        condition: service_started
+      - "127.0.0.1:9009:9009"
     healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:9090/-/ready || exit 1"]
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:9009/ready || exit 1"]
       interval: 10s
-      retries: 10
+      retries: 15
       timeout: 5s
 
+  # ================================================================
+  # Grafana — dashboards
+  # ================================================================
   grafana:
     image: grafana/grafana:main
     depends_on:
       loki:
         condition: service_healthy
-      prometheus:
+      mimir:
         condition: service_healthy
     ports:
       - "127.0.0.1:3000:3000"
@@ -73,7 +74,6 @@ services:
       - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
 
 volumes:
-  fluentd-log:
   loki-data:
-  prometheus-data:
+  mimir-data:
   grafana-data:
