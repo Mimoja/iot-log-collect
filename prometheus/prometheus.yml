@@ -1,0 +1,10 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  # Fluentd exposes edge device metrics (cpu, mem, disk, net, thermal)
+  # as Prometheus gauges on :24231, converted from forwarded Fluent Bit records.
+  - job_name: fluentd
+    static_configs:
+      - targets: ["fluentd:24231"]

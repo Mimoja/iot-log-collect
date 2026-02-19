@@ -2,6 +2,7 @@ auth_enabled: false
 
 server:
   http_listen_port: 3100
+  log_level: warn
 
 common:
   path_prefix: /loki
@@ -11,8 +12,24 @@ common:
       rules_directory: /loki/rules
   replication_factor: 1
   ring:
+    instance_addr: 127.0.0.1
     kvstore:
       store: inmemory
+
+ingester:
+  wal:
+    dir: /loki/wal
+  lifecycler:
+    ring:
+      replication_factor: 1
+    final_sleep: 0s
+    # Fix "zone not set" error in single-node Loki >= 3.1
+    # https://github.com/grafana/loki/issues/13414
+    availability_zone: local
+  chunk_idle_period: 1h
+  max_chunk_age: 1h
+  chunk_target_size: 1048576
+  chunk_retain_period: 30s
 
 schema_config:
   configs:

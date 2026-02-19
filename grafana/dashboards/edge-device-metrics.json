@@ -1,6 +1,6 @@
 {
   "annotations": { "list": [] },
-  "description": "Edge device hardware metrics (CPU, memory, disk, network, thermal) collected via Fluent Bit and stored in Loki.",
+  "description": "Edge device hardware metrics (CPU, memory, disk, network, thermal) collected via Fluent Bit, exposed by Fluentd as Prometheus gauges, and stored in Prometheus.",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -10,60 +10,121 @@
   ],
   "panels": [
     {
-      "datasource": { "type": "loki", "uid": "" },
-      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "axisLabel": "% used", "drawStyle": "line", "fillOpacity": 20, "lineWidth": 2, "spanNulls": true }, "unit": "percent", "min": 0, "max": 100 } },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "axisLabel": "% used", "drawStyle": "line", "fillOpacity": 20, "lineWidth": 2, "spanNulls": true },
+          "unit": "percent",
+          "min": 0,
+          "max": 100
+        }
+      },
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
       "id": 1,
       "options": { "legend": { "calcs": ["mean", "lastNotNull"], "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "multi", "sort": "desc" } },
       "title": "CPU Usage",
       "type": "timeseries",
-      "targets": [{ "datasource": { "type": "loki", "uid": "" }, "expr": "{job=\"edge-metrics\", metric_type=\"cpu\", device_host=~\"$device\"} | json | unwrap cpu_p | __error__=\"\"", "legendFormat": "{{device_host}}", "refId": "A" }]
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "edge_cpu_usage_percent{device_host=~\"$device\"}", "legendFormat": "{{device_host}} total", "refId": "A" },
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "edge_cpu_user_percent{device_host=~\"$device\"}", "legendFormat": "{{device_host}} user", "refId": "B" },
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "edge_cpu_system_percent{device_host=~\"$device\"}", "legendFormat": "{{device_host}} system", "refId": "C" }
+      ]
     },
     {
-      "datasource": { "type": "loki", "uid": "" },
-      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "axisLabel": "% used", "drawStyle": "line", "fillOpacity": 20, "lineWidth": 2, "spanNulls": true }, "unit": "percent", "min": 0, "max": 100 } },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "axisLabel": "bytes", "drawStyle": "line", "fillOpacity": 20, "lineWidth": 2, "spanNulls": true, "stacking": { "mode": "normal" } },
+          "unit": "decbytes"
+        }
+      },
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
       "id": 2,
       "options": { "legend": { "calcs": ["mean", "lastNotNull"], "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "multi", "sort": "desc" } },
       "title": "Memory Usage",
       "type": "timeseries",
-      "targets": [{ "datasource": { "type": "loki", "uid": "" }, "expr": "{job=\"edge-metrics\", metric_type=\"mem\", device_host=~\"$device\"} | json | unwrap Mem_used_p | __error__=\"\"", "legendFormat": "{{device_host}}", "refId": "A" }]
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "edge_memory_used_bytes{device_host=~\"$device\"} * 1024", "legendFormat": "{{device_host}} used", "refId": "A" },
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "edge_memory_free_bytes{device_host=~\"$device\"} * 1024", "legendFormat": "{{device_host}} free", "refId": "B" },
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "edge_memory_total_bytes{device_host=~\"$device\"} * 1024", "legendFormat": "{{device_host}} total", "refId": "C" }
+      ]
     },
     {
-      "datasource": { "type": "loki", "uid": "" },
-      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "axisLabel": "bytes/s", "drawStyle": "line", "fillOpacity": 20, "lineWidth": 2, "spanNulls": true }, "unit": "Bps" } },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "axisLabel": "bytes/s", "drawStyle": "line", "fillOpacity": 20, "lineWidth": 2, "spanNulls": true },
+          "unit": "Bps"
+        }
+      },
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
       "id": 3,
       "options": { "legend": { "calcs": ["mean", "lastNotNull"], "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "multi", "sort": "desc" } },
       "title": "Disk I/O",
       "type": "timeseries",
       "targets": [
-        { "datasource": { "type": "loki", "uid": "" }, "expr": "{job=\"edge-metrics\", metric_type=\"disk\", device_host=~\"$device\"} | json | unwrap read_size | __error__=\"\"", "legendFormat": "{{device_host}} read", "refId": "A" },
-        { "datasource": { "type": "loki", "uid": "" }, "expr": "{job=\"edge-metrics\", metric_type=\"disk\", device_host=~\"$device\"} | json | unwrap write_size | __error__=\"\"", "legendFormat": "{{device_host}} write", "refId": "B" }
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "edge_disk_read_bytes{device_host=~\"$device\"}", "legendFormat": "{{device_host}} read", "refId": "A" },
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "edge_disk_write_bytes{device_host=~\"$device\"}", "legendFormat": "{{device_host}} write", "refId": "B" }
       ]
     },
     {
-      "datasource": { "type": "loki", "uid": "" },
-      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "drawStyle": "line", "fillOpacity": 20, "lineWidth": 2, "spanNulls": true }, "unit": "decbytes" } },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "fillOpacity": 20, "lineWidth": 2, "spanNulls": true },
+          "unit": "decbytes"
+        }
+      },
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
       "id": 4,
       "options": { "legend": { "calcs": ["mean", "lastNotNull"], "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "multi", "sort": "desc" } },
       "title": "Network I/O (eth0)",
       "type": "timeseries",
       "targets": [
-        { "datasource": { "type": "loki", "uid": "" }, "expr": "{job=\"edge-metrics\", metric_type=\"net\", device_host=~\"$device\"} | json | unwrap eth0_rx_bytes | __error__=\"\"", "legendFormat": "{{device_host}} rx", "refId": "A" },
-        { "datasource": { "type": "loki", "uid": "" }, "expr": "{job=\"edge-metrics\", metric_type=\"net\", device_host=~\"$device\"} | json | unwrap eth0_tx_bytes | __error__=\"\"", "legendFormat": "{{device_host}} tx", "refId": "B" }
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "edge_net_rx_bytes{device_host=~\"$device\"}", "legendFormat": "{{device_host}} rx", "refId": "A" },
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "edge_net_tx_bytes{device_host=~\"$device\"}", "legendFormat": "{{device_host}} tx", "refId": "B" }
       ]
     },
     {
-      "datasource": { "type": "loki", "uid": "" },
-      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "drawStyle": "line", "fillOpacity": 20, "lineWidth": 2, "spanNulls": true }, "unit": "celsius" } },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "fillOpacity": 20, "lineWidth": 2, "spanNulls": true },
+          "unit": "celsius"
+        }
+      },
       "gridPos": { "h": 8, "w": 24, "x": 0, "y": 16 },
       "id": 5,
       "options": { "legend": { "calcs": ["mean", "lastNotNull"], "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "multi", "sort": "desc" } },
       "title": "Thermal",
       "type": "timeseries",
-      "targets": [{ "datasource": { "type": "loki", "uid": "" }, "expr": "{job=\"edge-metrics\", metric_type=\"thermal\", device_host=~\"$device\"} | json | unwrap temp | __error__=\"\"", "legendFormat": "{{device_host}}", "refId": "A" }]
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "edge_thermal_celsius{device_host=~\"$device\"}", "legendFormat": "{{device_host}}", "refId": "A" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "fillOpacity": 20, "lineWidth": 2, "spanNulls": true },
+          "unit": "decbytes"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+      "id": 6,
+      "options": { "legend": { "calcs": ["mean", "lastNotNull"], "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "title": "Swap Usage",
+      "type": "timeseries",
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "edge_swap_used_bytes{device_host=~\"$device\"} * 1024", "legendFormat": "{{device_host}} used", "refId": "A" },
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "edge_swap_total_bytes{device_host=~\"$device\"} * 1024", "legendFormat": "{{device_host}} total", "refId": "B" }
+      ]
     }
   ],
   "refresh": "30s",
@@ -71,7 +132,18 @@
   "tags": ["edge", "metrics", "iot"],
   "templating": {
     "list": [
-      { "datasource": { "type": "loki", "uid": "" }, "definition": "label_values({job=\"edge-metrics\"}, device_host)", "includeAll": true, "multi": true, "name": "device", "label": "Device", "query": "label_values({job=\"edge-metrics\"}, device_host)", "refresh": 2, "sort": 1, "type": "query" }
+      {
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "definition": "label_values(edge_cpu_usage_percent, device_host)",
+        "includeAll": true,
+        "multi": true,
+        "name": "device",
+        "label": "Device",
+        "query": "label_values(edge_cpu_usage_percent, device_host)",
+        "refresh": 2,
+        "sort": 1,
+        "type": "query"
+      }
     ]
   },
   "time": { "from": "now-6h", "to": "now" },
