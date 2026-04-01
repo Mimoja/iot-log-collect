@@ -3,6 +3,11 @@ services:
   # Fluentd — log collector (receives forward protocol from edge devices)
   # ================================================================
   fluentd:
+    logging:
+      driver: local
+      options:
+        max-file: 5
+        max-size: 1g
     build: ./fluentd
     command: fluentd -q
     volumes:
@@ -23,6 +28,11 @@ services:
   # OpenTelemetry Collector — metrics receiver (OTLP from edge devices)
   # ================================================================
   otelcol:
+    logging:
+      driver: local
+      options:
+        max-file: 5
+        max-size: 1g
     image: otel/opentelemetry-collector-contrib:latest
     command: ["--config", "/etc/otelcol/otelcol.yml"]
     volumes:
@@ -41,6 +51,11 @@ services:
   # Loki — log storage
   # ================================================================
   loki:
+    logging:
+      driver: local
+      options:
+        max-file: 5
+        max-size: 1g
     image: grafana/loki:3.6
     command: -config.file=/etc/loki/loki.yml
     volumes:
@@ -60,6 +75,11 @@ services:
   # Mimir — metrics storage
   # ================================================================
   mimir:
+    logging:
+      driver: local
+      options:
+        max-file: 5
+        max-size: 1g
     image: grafana/mimir:2.15.0
     command: -config.file=/etc/mimir/mimir.yml
     volumes:
@@ -73,6 +93,11 @@ services:
   # Grafana — dashboards
   # ================================================================
   grafana:
+    logging:
+      driver: local
+      options:
+        max-file: 5
+        max-size: 1g
     image: grafana/grafana:main
     depends_on:
       loki:
